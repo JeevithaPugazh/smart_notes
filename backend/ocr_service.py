@@ -97,3 +97,64 @@ def extract_text_from_image(image_bytes: bytes, engine: EngineName = "pytesserac
 
     return _ocr_with_pytesseract(image_bytes)
 
+
+def format_notes(raw_text: str) -> str:
+    """
+    Lightly clean and structure OCR output so it looks more like
+    human-written study notes.
+    """
+    if not raw_text:
+        return ""
+
+    # Normalize line endings and trim trailing spaces.
+    lines = [line.rstrip() for line in raw_text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
+
+    cleaned: list[str] = []
+    blank_streak = 0
+
+    for original in lines:
+        line = original.strip()
+
+        # Collapse multiple blank lines into a single one.
+        if not line:
+            blank_streak += 1
+            if blank_streak > 1:
+                continue
+            cleaned.append("")
+            continue
+        blank_streak = 0
+
+        # Normalize common bullet markers.
+        if line.startswith(("• ", "* ", "- ")):
+            line = "- " + line.lstrip("•*- ").lstrip()
+
+        cleaned.append(line)
+
+    # Second pass: add spacing around "heading-like" lines.
+    final_lines: list[str] = []
+    for idx, line in enumerate(cleaned):
+        prev_line = cleaned[idx - 1] if idx > 0 else ""
+        next_line = cleaned[idx + 1] if idx + 1 < len(cleaned) else ""
+
+        is_heading = bool(line) and (
+            (line.isupper() and len(line) <= 80)
+            or line.endswith(":")
+        )
+
+        if is_heading:
+            if prev_line and prev_line.strip():
+                final_lines.append("")
+            final_lines.append(line)
+            if next_line and next_line.strip():
+                final_lines.append("")
+        else:
+            final_lines.append(line)
+
+    # Trim leading/trailing blank lines.
+    while final_lines and not final_lines[0].strip():
+        final_lines.pop(0)
+    while final_lines and not final_lines[-1].strip():
+        final_lines.pop()
+
+    return "\n".join(final_lines)
+
