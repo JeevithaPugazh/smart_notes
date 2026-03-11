@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import io
 import os
+from shutil import which
 from typing import Literal
 
 from PIL import Image
@@ -10,6 +11,15 @@ import pytesseract
 
 
 EngineName = Literal["pytesseract", "anthropic"]
+
+# Make sure pytesseract knows where the tesseract executable is.
+_tess_cmd = os.getenv("TESSERACT_CMD")
+if _tess_cmd:
+    pytesseract.pytesseract.tesseract_cmd = _tess_cmd
+else:
+    _auto = which("tesseract")
+    if _auto:
+        pytesseract.pytesseract.tesseract_cmd = _auto
 
 
 def _ocr_with_pytesseract(image_bytes: bytes) -> str:
