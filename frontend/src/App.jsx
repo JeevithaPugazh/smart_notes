@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { exportPdf, exportDocx } from "./api.js";
+import MagicLoading from "./MagicLoading.jsx";
 
 export default function App() {
   const [file, setFile] = useState(null);
@@ -242,7 +243,9 @@ export default function App() {
               lineHeight: 1.5
             }}
           >
-            {notesText ? (
+            {loading ? (
+              <MagicLoading />
+            ) : notesText ? (
               <ReactMarkdown>{notesText}</ReactMarkdown>
             ) : (
               <span style={{ fontSize: 13, color: "#9ca3af", fontFamily: "system-ui" }}>
